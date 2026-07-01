@@ -5,6 +5,7 @@ import {
 } from "@/lib/admin/actions";
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDate } from "@/lib/datetime/format";
 import { SubmitButton } from "@/components/admin/submit-button";
 
 type CameraRow = {
@@ -140,7 +141,7 @@ export default async function AdminCamerasPage({ searchParams }: AdminCamerasPag
                       Simpan
                     </SubmitButton>
                     <span className="text-sm text-[var(--muted)]">
-                      Dibuat {new Date(camera.created_at).toLocaleDateString("id-ID")}
+                      Dibuat {formatDate(camera.created_at)}
                     </span>
                   </div>
                 </form>

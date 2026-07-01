@@ -19,7 +19,14 @@ type RawProfile = {
 };
 
 export async function getCurrentUser(): Promise<User | null> {
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+
+  try {
+    supabase = await createClient();
+  } catch {
+    return null;
+  }
+
   const {
     data: { user },
     error

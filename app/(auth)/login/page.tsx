@@ -3,6 +3,8 @@ import { LoginForm } from "@/components/auth/login-form";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { roleHomePath } from "@/lib/auth/roles";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const appName = process.env.NEXT_PUBLIC_APP_NAME ?? "CCTV Digital Swanda";
   const profile = await getCurrentProfile();

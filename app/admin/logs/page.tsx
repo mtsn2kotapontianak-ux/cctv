@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDateTime } from "@/lib/datetime/format";
 import type { ActivityAction } from "@/lib/logs/activity";
 
 type AdminLogsPageProps = {
@@ -203,7 +204,7 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
                   return (
                     <tr className="border-t border-[var(--border)] align-top" key={log.id}>
                       <td className="px-4 py-3 text-[var(--muted)]">
-                        {new Date(log.created_at).toLocaleString("id-ID")}
+                        {formatDateTime(log.created_at)}
                       </td>
                       <td className="px-4 py-3">
                         {profile ? (

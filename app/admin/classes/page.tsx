@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDate } from "@/lib/datetime/format";
 import { SubmitButton } from "@/components/admin/submit-button";
 
 type AdminClassesPageProps = {
@@ -172,7 +173,7 @@ export default async function AdminClassesPage({ searchParams }: AdminClassesPag
                         <p className="font-semibold text-[var(--foreground)]">{classItem.nama_kelas}</p>
                         <p className="mt-1 text-sm text-[var(--muted)]">
                           {assignedParents.length} orang tua - Dibuat{" "}
-                          {new Date(classItem.created_at).toLocaleDateString("id-ID")}
+                          {formatDate(classItem.created_at)}
                         </p>
                       </div>
                       <span className="rounded-md border border-[var(--border)] bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 group-open:bg-teal-50 group-open:text-teal-700">

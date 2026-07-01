@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { formatDate } from "@/lib/datetime/format";
 import { SubmitButton } from "@/components/admin/submit-button";
 
 type ProfileRow = {
@@ -282,7 +283,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
                         </span>
                       </td>
                       <td className="px-4 py-3 text-[var(--muted)]">
-                        {new Date(user.created_at).toLocaleDateString("id-ID")}
+                        {formatDate(user.created_at)}
                       </td>
                       <td className="px-4 py-3">
                         <form action={updateUserPasswordAction} className="flex min-w-72 gap-2">
