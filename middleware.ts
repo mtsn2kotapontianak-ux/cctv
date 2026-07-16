@@ -26,6 +26,14 @@ export async function middleware(request: NextRequest) {
     request
   });
 
+  const matchedRoute = protectedPrefixes.find(({ prefix }) =>
+    request.nextUrl.pathname.startsWith(prefix)
+  );
+
+  if (!matchedRoute) {
+    return response;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -53,14 +61,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user }
   } = await supabase.auth.getUser();
-
-  const matchedRoute = protectedPrefixes.find(({ prefix }) =>
-    request.nextUrl.pathname.startsWith(prefix)
-  );
-
-  if (!matchedRoute) {
-    return response;
-  }
 
   if (!user) {
     const redirectUrl = request.nextUrl.clone();

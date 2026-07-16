@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { isUserRole, roleHomePath, type UserRole } from "@/lib/auth/roles";
@@ -18,7 +19,7 @@ type RawProfile = {
   role: string;
 };
 
-export async function getCurrentUser(): Promise<User | null> {
+export const getCurrentUser = cache(async (): Promise<User | null> => {
   let supabase: Awaited<ReturnType<typeof createClient>>;
 
   try {
@@ -37,9 +38,9 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 
   return user;
-}
+});
 
-export async function getCurrentProfile(): Promise<CurrentProfile | null> {
+export const getCurrentProfile = cache(async (): Promise<CurrentProfile | null> => {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -63,7 +64,7 @@ export async function getCurrentProfile(): Promise<CurrentProfile | null> {
     nama: data.nama,
     role: data.role
   };
-}
+});
 
 export async function requireAuth(): Promise<User> {
   const user = await getCurrentUser();

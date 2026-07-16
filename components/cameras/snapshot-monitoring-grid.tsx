@@ -108,11 +108,13 @@ export function SnapshotMonitoringGrid({ cameras }: SnapshotMonitoringGridProps)
                 <img
                   alt={`Snapshot ${camera.nama_kamera}`}
                   className="h-full w-full object-cover"
+                  loading="lazy"
                   onError={() => {
                     setFailedCameraIds((current) => new Set(current).add(camera.id));
                   }}
                   onLoad={() => {
                     setFailedCameraIds((current) => {
+                      if (!current.has(camera.id)) return current;
                       const next = new Set(current);
                       next.delete(camera.id);
                       return next;

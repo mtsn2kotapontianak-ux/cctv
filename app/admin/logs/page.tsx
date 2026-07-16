@@ -72,14 +72,6 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
   if (selectedUserId) queryParams.set("userId", selectedUserId);
 
   const supabase = createAdminClient();
-  const [
-    { data: profiles },
-    { data: cameras }
-  ] = await Promise.all([
-    supabase.from("profiles").select("id,nama,role").order("nama").returns<ProfileRow[]>(),
-    supabase.from("cameras").select("id,nama_kamera").order("nama_kamera").returns<CameraRow[]>()
-  ]);
-
   let logsQuery = supabase
     .from("activity_logs")
     .select("id,user_id,action,camera_id,metadata,created_at", { count: "exact" })
@@ -105,7 +97,16 @@ export default async function AdminLogsPage({ searchParams }: AdminLogsPageProps
 
   const from = (currentPage - 1) * pageSize;
   const to = from + pageSize - 1;
-  const { count, data: logs, error } = await logsQuery.range(from, to).returns<LogRow[]>();
+
+  const [
+    { data: profiles },
+    { data: cameras },
+    { count, data: logs, error }
+  ] = await Promise.all([
+    supabase.from("profiles").select("id,nama,role").order("nama").returns<ProfileRow[]>(),
+    supabase.from("cameras").select("id,nama_kamera").order("nama_kamera").returns<CameraRow[]>(),
+    logsQuery.range(from, to).returns<LogRow[]>()
+  ]);
   const profileById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
   const cameraById = new Map((cameras ?? []).map((camera) => [camera.id, camera]));
   const totalPages = Math.max(Math.ceil((count ?? 0) / pageSize), 1);

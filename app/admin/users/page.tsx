@@ -103,15 +103,20 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
     : "active";
 
   const supabase = createAdminClient();
-  const { data: profiles, error: profilesError } = await supabase
-    .from("profiles")
-    .select("id,is_active,nama,role,created_at")
-    .order("created_at", { ascending: false })
-    .returns<Omit<ProfileRow, "email">[]>();
-  const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000
-  });
+  const [
+    { data: profiles, error: profilesError },
+    { data: usersData, error: usersError }
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id,is_active,nama,role,created_at")
+      .order("created_at", { ascending: false })
+      .returns<Omit<ProfileRow, "email">[]>(),
+    supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000
+    })
+  ]);
   const emailById = new Map(usersData?.users.map((user) => [user.id, user.email ?? "-"]) ?? []);
   const data: ProfileRow[] =
     profiles?.map((profile) => ({
