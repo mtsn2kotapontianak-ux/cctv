@@ -4,7 +4,7 @@ import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Camera, GraduationCap, ShieldCheck } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { MetricCard } from "@/components/dashboard/metric-card";
 
 type ClassRow = {
   id: string;
@@ -26,33 +26,6 @@ type CameraRow = {
   deskripsi: string | null;
 };
 
-type MetricTileProps = {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  tone: "teal" | "amber" | "slate";
-};
-
-function MetricTile({ icon: Icon, label, value, tone }: MetricTileProps) {
-  const toneClassName = {
-    teal: "bg-teal-50 text-teal-700 ring-teal-100",
-    amber: "bg-amber-50 text-amber-700 ring-amber-100",
-    slate: "bg-slate-100 text-slate-700 ring-slate-200"
-  }[tone];
-
-  return (
-    <div className="flex items-center gap-4 px-5 py-4">
-      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-md ring-1 ${toneClassName}`}>
-        <Icon aria-hidden="true" size={18} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-[var(--muted)]">{label}</p>
-        <p className="mt-1 truncate text-2xl font-semibold tracking-normal">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 export default async function ParentCamerasPage() {
   const profile = await getCurrentProfile();
 
@@ -72,56 +45,54 @@ export default async function ParentCamerasPage() {
 
   if (mappingError) {
     return (
-      <div className="mx-auto max-w-6xl">
-        <EmptyState
-          description={`Gagal memuat mapping kamera: ${mappingError.message}`}
-          title="Kamera tidak tersedia"
-        />
-      </div>
+      <EmptyState
+        description={`Gagal memuat mapping kamera: ${mappingError.message}`}
+        title="Kamera tidak tersedia"
+      />
     );
   }
 
   const cameraIds = [...new Set((mappings ?? []).map((mapping) => mapping.camera_id))];
   const classIds = [...new Set((mappings ?? []).map((mapping) => mapping.class_id))];
-  const { data, error } =
+
+  const [
+    { data, error },
+    { data: classes }
+  ] = await Promise.all([
     cameraIds.length > 0
-      ? await supabase
+      ? supabase
           .from("cameras")
           .select("id,nama_kamera,source_name,snapshot_source_name,tunnel_url,snapshot_url,deskripsi")
           .in("id", cameraIds)
           .eq("is_active", true)
           .order("nama_kamera", { ascending: true })
           .returns<CameraRow[]>()
-      : { data: [] as CameraRow[], error: null };
-  const { data: classes } =
+      : Promise.resolve({ data: [] as CameraRow[], error: null }),
     classIds.length > 0
-      ? await supabase
+      ? supabase
           .from("classes")
           .select("id,nama_kelas")
           .in("id", classIds)
           .order("nama_kelas", { ascending: true })
           .returns<ClassRow[]>()
-      : { data: [] as ClassRow[] };
+      : Promise.resolve({ data: [] as ClassRow[] })
+  ]);
 
   if (error) {
     return (
-      <div className="mx-auto max-w-6xl">
-        <EmptyState
-          description={`Gagal memuat kamera: ${error.message}`}
-          title="Kamera tidak tersedia"
-        />
-      </div>
+      <EmptyState
+        description={`Gagal memuat kamera: ${error.message}`}
+        title="Kamera tidak tersedia"
+      />
     );
   }
 
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return (
-      <div className="mx-auto max-w-6xl">
-        <EmptyState
-          description="Belum ada kamera yang diizinkan untuk akun ini."
-          title="Tidak ada kamera"
-        />
-      </div>
+      <EmptyState
+        description="Belum ada kamera yang diizinkan untuk akun ini."
+        title="Tidak ada kamera"
+      />
     );
   }
 
@@ -136,40 +107,37 @@ export default async function ParentCamerasPage() {
   });
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-5">
-      <section className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-        <div className="px-5 py-6 lg:px-6">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-semibold text-teal-700">
-              <ShieldCheck aria-hidden="true" size={16} />
-              Kamera terotorisasi
-            </div>
-            <h2 className="mt-4 text-2xl font-semibold tracking-normal lg:text-3xl">
-              Kamera yang diizinkan
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-              Snapshot ringan ditampilkan sebagai pratinjau sebelum membuka live view kelas.
-            </p>
+    <div className="grid gap-6">
+      {/* Executive Header Banner */}
+      <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-950 p-6 sm:p-8 text-white shadow-xl">
+        <div className="absolute right-0 top-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full bg-teal-500/20 px-3 py-1 text-xs font-bold text-teal-300 ring-1 ring-teal-500/30">
+            <ShieldCheck size={14} />
+            Daftar Kamera Terautorisasi • Orang Tua
           </div>
-        </div>
-        <div className="grid divide-y divide-[var(--border)] border-t border-[var(--border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <MetricTile icon={Camera} label="Total kamera" tone="amber" value={String(data.length)} />
-          <MetricTile
-            icon={GraduationCap}
-            label="Kelas terhubung"
-            tone="teal"
-            value={String(classes?.length ?? 0)}
-          />
-          <MetricTile icon={ShieldCheck} label="Status akses" tone="slate" value="Aman" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Kamera Ruang Kelas Anak ({data.length} Unit)
+          </h1>
+          <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
+            Berikut adalah daftar kamera CCTV yang telah dipetakan khusus oleh sekolah untuk ruang kelas anak Anda. Klik tombol &ldquo;Buka Live&rdquo; untuk menonton video bergerak.
+          </p>
         </div>
       </section>
 
-      <section className="grid gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-normal">Snapshot kamera</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Buka live view dari kamera yang sudah dipetakan ke kelas anak.
-          </p>
+      {/* Reassuring Stats Grid */}
+      <section className="grid gap-4 sm:grid-cols-3">
+        <MetricCard label="Total Kamera Terotorisasi" value={`${data.length} Kamera`} />
+        <MetricCard label="Ruang Kelas Terhubung" value={`${classes?.length ?? 0} Ruangan`} />
+        <MetricCard label="Status Keamanan Akses" value="🟢 Terproteksi Penuh" />
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">Snapshot & Jalan Pintas Live View</h2>
+            <p className="text-sm text-[var(--muted)]">Pratinjau gambar diperbarui otomatis setiap 15 detik agar hemat bandwidth.</p>
+          </div>
         </div>
         <ParentSnapshotGrid
           cameras={data.map((camera) => ({

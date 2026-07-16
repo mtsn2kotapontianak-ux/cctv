@@ -2,13 +2,17 @@ import Link from "next/link";
 import {
   Camera,
   GraduationCap,
-  ShieldCheck
+  ShieldCheck,
+  PlayCircle,
+  ArrowRight,
+  Eye,
+  CheckCircle2
 } from "lucide-react";
 import { ParentSnapshotGrid } from "@/components/cameras/parent-snapshot-grid";
 import { getCurrentProfile } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import type { LucideIcon } from "lucide-react";
+import { MetricCard } from "@/components/dashboard/metric-card";
 
 type ClassRow = {
   id: string;
@@ -30,33 +34,6 @@ type CameraRow = {
   deskripsi: string | null;
 };
 
-type MetricTileProps = {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  tone: "teal" | "amber" | "slate";
-};
-
-function MetricTile({ icon: Icon, label, value, tone }: MetricTileProps) {
-  const toneClassName = {
-    teal: "bg-teal-50 text-teal-700 ring-teal-100",
-    amber: "bg-amber-50 text-amber-700 ring-amber-100",
-    slate: "bg-slate-100 text-slate-700 ring-slate-200"
-  }[tone];
-
-  return (
-    <div className="flex items-center gap-4 px-5 py-4">
-      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-md ring-1 ${toneClassName}`}>
-        <Icon aria-hidden="true" size={18} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-[var(--muted)]">{label}</p>
-        <p className="mt-1 truncate text-2xl font-semibold tracking-normal">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 export default async function ParentDashboardPage() {
   const profile = await getCurrentProfile();
 
@@ -69,15 +46,21 @@ export default async function ParentDashboardPage() {
   }
 
   const supabase = await createClient();
-  const { data: classes } = await supabase
-    .from("classes")
-    .select("id,nama_kelas")
-    .order("nama_kelas", { ascending: true })
-    .returns<ClassRow[]>();
-  const { data: mappings } = await supabase
-    .from("class_cameras")
-    .select("class_id,camera_id")
-    .returns<ClassCameraRow[]>();
+  const [
+    { data: classes },
+    { data: mappings }
+  ] = await Promise.all([
+    supabase
+      .from("classes")
+      .select("id,nama_kelas")
+      .order("nama_kelas", { ascending: true })
+      .returns<ClassRow[]>(),
+    supabase
+      .from("class_cameras")
+      .select("class_id,camera_id")
+      .returns<ClassCameraRow[]>()
+  ]);
+
   const cameraIds = [...new Set((mappings ?? []).map((mapping) => mapping.camera_id))];
   const { data: cameras } =
     cameraIds.length > 0
@@ -89,6 +72,7 @@ export default async function ParentDashboardPage() {
           .order("nama_kamera", { ascending: true })
           .returns<CameraRow[]>()
       : { data: [] as CameraRow[] };
+
   const classIdsByCameraId = new Map<string, string[]>();
   const classNamesById = new Map((classes ?? []).map((classItem) => [classItem.id, classItem.nama_kelas]));
   const cameraCountByClassId = new Map<string, number>();
@@ -108,88 +92,115 @@ export default async function ParentDashboardPage() {
       .map((classId) => classNamesById.get(classId))
       .filter((className): className is string => Boolean(className))
   }));
+
   const hasClasses = Boolean(classes?.length);
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-5">
-      <section className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-sm">
-        <div className="px-5 py-6 lg:px-6">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-md border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-semibold text-teal-700">
-              <ShieldCheck aria-hidden="true" size={16} />
-              Akses orang tua aktif
+    <div className="grid gap-6">
+      {/* Executive Parent Hero Banner */}
+      <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-950 p-6 sm:p-8 text-white shadow-xl">
+        <div className="absolute right-0 top-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-teal-500/20 px-3 py-1 text-xs font-bold text-teal-300 ring-1 ring-teal-500/30">
+              <ShieldCheck size={14} />
+              Portal Monitoring Orang Tua & Wali Murid • MTsN 2 Pontianak
             </div>
-            <h2 className="mt-4 text-2xl font-semibold tracking-normal lg:text-3xl">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Selamat datang, {profile.nama}
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-              Pantau kelas anak melalui snapshot ringan dan buka live view hanya untuk kamera yang
-              sudah diizinkan oleh sekolah.
+            </h1>
+            <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed">
+              Pantau aktivitas kegiatan belajar anak Anda di ruang kelas melalui pratinjau snapshot ringan yang diperbarui otomatis, dan buka live stream WebRTC saat jam sekolah.
             </p>
           </div>
-        </div>
-        <div className="grid divide-y divide-[var(--border)] border-t border-[var(--border)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <MetricTile
-            icon={GraduationCap}
-            label="Kelas anak"
-            tone="teal"
-            value={String(classes?.length ?? 0)}
-          />
-          <MetricTile
-            icon={Camera}
-            label="Kamera tersedia"
-            tone="amber"
-            value={String(snapshotCameras.length)}
-          />
-          <MetricTile icon={ShieldCheck} label="Status akses" tone="slate" value="Aman" />
+          <div className="shrink-0">
+            <Link
+              href="/parent/cameras"
+              className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-5 py-3.5 text-sm font-bold text-slate-950 shadow-lg hover:bg-teal-400 transition duration-200 transform hover:-translate-y-0.5"
+            >
+              <Eye size={18} />
+              Lihat Semua Kamera
+            </Link>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-normal">Snapshot kamera</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Pratinjau ringan diperbarui otomatis setiap 15 detik.
-          </p>
+      {/* Reassuring Stats Grid */}
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MetricCard label="Ruang Kelas Anak" value={`${classes?.length ?? 0} Kelas`} />
+        <MetricCard label="Kamera Terautorisasi" value={`${snapshotCameras.length} Kamera`} />
+        <MetricCard label="Enkripsi Stream" value="🔒 Go2RTC Aman" />
+        <MetricCard label="Status Pemantauan" value="🟢 Aktif / Online" />
+      </section>
+
+      {/* Class shortcuts section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">Daftar Ruang Kelas Anak</h2>
+            <p className="text-sm text-[var(--muted)]">Klik pada kelas untuk masuk ke tampilan live video bergerak.</p>
+          </div>
         </div>
-        {snapshotCameras.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] p-8 text-center">
-            <p className="font-semibold">Kamera belum tersedia</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Belum ada kamera aktif yang dipetakan ke kelas anak.
-            </p>
+
+        {!hasClasses ? (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500 shadow-sm">
+            Belum ada kelas yang dihubungkan dengan akun orang tua ini. Silakan hubungi admin sekolah jika ada kesalahan mapping.
           </div>
         ) : (
-          <ParentSnapshotGrid cameras={snapshotCameras} density="dashboard" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(classes ?? []).map((classItem) => {
+              const count = cameraCountByClassId.get(classItem.id) ?? 0;
+              return (
+                <Link
+                  key={classItem.id}
+                  href={`/parent/classes/${classItem.id}`}
+                  className="group flex flex-col justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm transition duration-200 hover:border-teal-500 hover:shadow-md"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="grid h-10 w-10 place-items-center rounded-lg bg-teal-50 text-teal-700 ring-1 ring-teal-200">
+                        <GraduationCap size={20} />
+                      </span>
+                      <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-700">
+                        {count} Kamera Terpasang
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-lg font-bold text-slate-900 group-hover:text-teal-600 transition">
+                      {classItem.nama_kelas}
+                    </h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Klik untuk menonton streaming video live real-time dari ruang kelas ini.
+                    </p>
+                  </div>
+                  <div className="mt-5 pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs font-bold text-teal-600 group-hover:text-teal-700">
+                    <span className="flex items-center gap-1.5">
+                      <PlayCircle size={15} />
+                      Buka Live Stream
+                    </span>
+                    <ArrowRight size={14} className="transform transition group-hover:translate-x-1" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         )}
       </section>
 
-      <section className="grid gap-4">
-        <div>
-          <h2 className="text-xl font-semibold tracking-normal">Kelas anak</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">
-            Pilih kelas untuk membuka live view kamera yang terhubung.
-          </p>
+      {/* Snapshot Preview Grid Section */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">Pratinjau Snapshot Ruang Kelas</h2>
+            <p className="text-sm text-[var(--muted)]">Pratinjau gambar diperbarui otomatis setiap 15 detik agar hemat kuota internet Anda.</p>
+          </div>
         </div>
-        {!hasClasses ? (
-          <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--surface)] p-8 text-center text-sm text-[var(--muted)]">
-            Belum ada kelas yang terhubung ke akun ini.
+
+        {snapshotCameras.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500 shadow-sm">
+            Belum ada kamera aktif yang dipetakan ke kelas anak Anda saat ini.
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {(classes ?? []).map((classItem) => (
-              <Link
-                className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 text-slate-800 shadow-sm hover:border-teal-200 hover:bg-teal-50/30"
-                href={`/parent/classes/${classItem.id}`}
-                key={classItem.id}
-              >
-                <p className="font-semibold">{classItem.nama_kelas}</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  {cameraCountByClassId.get(classItem.id) ?? 0} kamera tersedia
-                </p>
-              </Link>
-            ))}
-          </div>
+          <ParentSnapshotGrid cameras={snapshotCameras} density="dashboard" />
         )}
       </section>
     </div>
