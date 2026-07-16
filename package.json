@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.50.3",
     "hls.js": "^1.6.16",

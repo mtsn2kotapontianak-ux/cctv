@@ -1,4 +1,4 @@
-export const appTimeZone = process.env.APP_TIME_ZONE || "Asia/Jakarta";
+export const appTimeZone = "Asia/Jakarta";
 
 export function formatDate(value: string | Date) {
   return new Intl.DateTimeFormat("id-ID", {
