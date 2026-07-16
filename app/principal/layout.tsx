@@ -1,8 +1,9 @@
 import { AppShell, type NavItem } from "@/components/layout/app-shell";
 
 const principalNavItems: NavItem[] = [
-  { href: "/principal", label: "Dasbor" },
-  { href: "/principal/classes", label: "Kelas" }
+  { href: "/principal", label: "Dasbor Komando" },
+  { href: "/principal/monitoring", label: "Monitoring NVR (Semua Kamera)" },
+  { href: "/principal/classes", label: "Daftar Per Kelas" }
 ];
 
 export default function PrincipalLayout({
@@ -11,7 +12,7 @@ export default function PrincipalLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AppShell navItems={principalNavItems} roleLabel="Kepala Sekolah" title="Dasbor Kepala Sekolah">
+    <AppShell navItems={principalNavItems} roleLabel="Kepala Sekolah" title="Dasbor NVR & CCTV Kepala Sekolah">
       {children}
     </AppShell>
   );
