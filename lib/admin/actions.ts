@@ -324,6 +324,7 @@ export async function createClassAction(formData: FormData) {
   }
 
   revalidatePath("/admin/classes");
+  revalidatePath("/admin/mapping");
 }
 
 export async function updateClassAction(formData: FormData) {
@@ -344,6 +345,7 @@ export async function updateClassAction(formData: FormData) {
   }
 
   revalidatePath("/admin/classes");
+  revalidatePath("/admin/mapping");
 }
 
 export async function deleteClassAction(formData: FormData) {
@@ -358,6 +360,7 @@ export async function deleteClassAction(formData: FormData) {
   }
 
   revalidatePath("/admin/classes");
+  revalidatePath("/admin/mapping");
 }
 
 export async function createCameraAction(formData: FormData) {
@@ -392,6 +395,10 @@ export async function createCameraAction(formData: FormData) {
   });
 
   revalidatePath("/admin/cameras");
+  revalidatePath("/admin/mapping");
+  revalidatePath("/admin/monitoring");
+  revalidatePath("/parent/cameras");
+  revalidatePath("/principal/monitoring");
   redirectCameras("success", "Kamera berhasil ditambahkan.");
 }
 
@@ -431,6 +438,10 @@ export async function updateCameraAction(formData: FormData) {
 
   revalidatePath("/admin/cameras");
   revalidatePath(`/admin/cameras/${id}`);
+  revalidatePath("/admin/mapping");
+  revalidatePath("/admin/monitoring");
+  revalidatePath("/parent/cameras");
+  revalidatePath("/principal/monitoring");
   redirectCameras("success", "Alamat dan data kamera berhasil diperbarui.");
 }
 
@@ -446,6 +457,10 @@ export async function deleteCameraAction(formData: FormData) {
   }
 
   revalidatePath("/admin/cameras");
+  revalidatePath("/admin/mapping");
+  revalidatePath("/admin/monitoring");
+  revalidatePath("/parent/cameras");
+  revalidatePath("/principal/monitoring");
   redirectCameras("success", "Kamera berhasil dihapus.");
 }
 
@@ -512,6 +527,10 @@ export async function updateClassMappingAction(formData: FormData) {
   });
 
   revalidatePath("/admin/mapping");
+  revalidatePath("/admin/classes");
+  revalidatePath("/admin/monitoring");
+  revalidatePath("/parent/cameras");
+  revalidatePath("/principal/monitoring");
   redirectMapping(classId, "success", "Mapping kelas berhasil disimpan.");
 }
 
@@ -556,6 +575,8 @@ export async function addParentToClassAction(formData: FormData) {
   });
 
   revalidatePath("/admin/classes");
+  revalidatePath("/admin/mapping");
+  revalidatePath("/parent/cameras");
   redirectClasses("success", "Orang tua berhasil ditambahkan ke kelas.");
 }
 
@@ -585,6 +606,8 @@ export async function removeParentFromClassAction(formData: FormData) {
   });
 
   revalidatePath("/admin/classes");
+  revalidatePath("/admin/mapping");
+  revalidatePath("/parent/cameras");
   redirectClasses("success", "Orang tua berhasil dihapus dari kelas.");
 }
 
@@ -689,5 +712,7 @@ export async function importClassParentsJsonAction(formData: FormData) {
 
   revalidatePath("/admin/classes");
   revalidatePath("/admin/users");
+  revalidatePath("/admin/mapping");
+  revalidatePath("/parent/cameras");
   redirectClasses("success", `${mappedCount} user orang tua berhasil diproses untuk kelas.`);
 }

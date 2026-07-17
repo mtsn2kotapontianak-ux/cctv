@@ -66,24 +66,26 @@ export default async function AdminMappingPage({ searchParams }: AdminMappingPag
       .returns<ParentRow[]>()
   ]);
 
-  const selectedClassId = params?.classId ?? classes?.[0]?.id ?? "";
-  const selectedClass = classes?.find((classItem) => classItem.id === selectedClassId);
+  const activeClassId = classes?.some((c) => c.id === params?.classId)
+    ? params!.classId!
+    : classes?.[0]?.id ?? "";
+  const selectedClass = classes?.find((classItem) => classItem.id === activeClassId);
   const loadError = classesError ?? camerasError ?? parentsError;
 
   const [
     { data: selectedCameraRows, error: selectedCamerasError },
     { data: selectedParentRows, error: selectedParentsError }
-  ] = selectedClassId
+  ] = activeClassId
     ? await Promise.all([
         supabase
           .from("class_cameras")
           .select("camera_id")
-          .eq("class_id", selectedClassId)
+          .eq("class_id", activeClassId)
           .returns<ClassCameraRow[]>(),
         supabase
           .from("user_classes")
           .select("user_id")
-          .eq("class_id", selectedClassId)
+          .eq("class_id", activeClassId)
           .returns<UserClassRow[]>()
       ])
     : [
@@ -96,6 +98,8 @@ export default async function AdminMappingPage({ searchParams }: AdminMappingPag
   const relationError = selectedCamerasError ?? selectedParentsError;
   const status = params?.status === "success" || params?.status === "error" ? params.status : null;
 
+  const mappingKey = `${activeClassId}-${Array.from(selectedCameraIds).sort().join(",")}-${Array.from(selectedParentIds).sort().join(",")}`;
+
   return (
     <div className="grid gap-6">
       <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
@@ -104,10 +108,10 @@ export default async function AdminMappingPage({ searchParams }: AdminMappingPag
           <div className="mt-4 flex flex-wrap gap-2">
             {classes.map((classItem) => (
               <Link
-                className={`rounded-md border px-3 py-2 text-sm font-semibold ${
-                  classItem.id === selectedClassId
-                    ? "border-[var(--primary)] bg-[#e6f4f1] text-[var(--primary-strong)]"
-                    : "border-[var(--border)] bg-white hover:bg-[var(--surface-subtle)]"
+                className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                  classItem.id === activeClassId
+                    ? "border-[var(--primary)] bg-[#e6f4f1] text-[var(--primary-strong)] shadow-sm"
+                    : "border-[var(--border)] bg-white hover:bg-[var(--surface-subtle)] text-slate-700"
                 }`}
                 href={`/admin/mapping?classId=${classItem.id}`}
                 key={classItem.id}
@@ -145,6 +149,7 @@ export default async function AdminMappingPage({ searchParams }: AdminMappingPag
         <form
           action={updateClassMappingAction}
           className="grid gap-6 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm"
+          key={mappingKey}
         >
           <input name="class_id" type="hidden" value={selectedClass.id} />
           <div>
@@ -161,27 +166,34 @@ export default async function AdminMappingPage({ searchParams }: AdminMappingPag
             </div>
             {cameras && cameras.length > 0 ? (
               <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                {cameras.map((camera) => (
-                  <label
-                    className="flex min-h-20 gap-3 rounded-md border border-[var(--border)] bg-white p-3 text-sm"
-                    key={camera.id}
-                  >
-                    <input
-                      className="mt-1"
-                      defaultChecked={selectedCameraIds.has(camera.id)}
-                      name="camera_ids"
-                      type="checkbox"
-                      value={camera.id}
-                    />
-                    <span>
-                      <span className="block font-semibold">{camera.nama_kamera}</span>
-                      <span className="mt-1 block text-[var(--muted)]">{camera.source_name}</span>
-                      <span className="mt-1 block text-xs text-[var(--muted)]">
-                        {camera.is_active ? "Aktif" : "Nonaktif"}
+                {cameras.map((camera) => {
+                  const isChecked = selectedCameraIds.has(camera.id);
+                  return (
+                    <label
+                      className={`flex min-h-20 gap-3 rounded-md border p-3 text-sm cursor-pointer transition ${
+                        isChecked
+                          ? "border-teal-500 bg-teal-50/40 text-slate-900"
+                          : "border-[var(--border)] bg-white hover:border-slate-400"
+                      }`}
+                      key={`${activeClassId}-${camera.id}-${isChecked}`}
+                    >
+                      <input
+                        className="mt-1"
+                        defaultChecked={isChecked}
+                        name="camera_ids"
+                        type="checkbox"
+                        value={camera.id}
+                      />
+                      <span>
+                        <span className="block font-semibold">{camera.nama_kamera}</span>
+                        <span className="mt-1 block text-[var(--muted)]">{camera.source_name}</span>
+                        <span className="mt-1 block text-xs text-[var(--muted)]">
+                          {camera.is_active ? "Aktif" : "Nonaktif"}
+                        </span>
                       </span>
-                    </span>
-                  </label>
-                ))}
+                    </label>
+                  );
+                })}
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted)]">
@@ -199,20 +211,27 @@ export default async function AdminMappingPage({ searchParams }: AdminMappingPag
             </div>
             {parents && parents.length > 0 ? (
               <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                {parents.map((parent) => (
-                  <label
-                    className="flex items-center gap-3 rounded-md border border-[var(--border)] bg-white p-3 text-sm"
-                    key={parent.id}
-                  >
-                    <input
-                      defaultChecked={selectedParentIds.has(parent.id)}
-                      name="parent_ids"
-                      type="checkbox"
-                      value={parent.id}
-                    />
-                    <span className="font-semibold">{parent.nama}</span>
-                  </label>
-                ))}
+                {parents.map((parent) => {
+                  const isChecked = selectedParentIds.has(parent.id);
+                  return (
+                    <label
+                      className={`flex items-center gap-3 rounded-md border p-3 text-sm cursor-pointer transition ${
+                        isChecked
+                          ? "border-teal-500 bg-teal-50/40 text-slate-900 font-semibold"
+                          : "border-[var(--border)] bg-white hover:border-slate-400 font-medium"
+                      }`}
+                      key={`${activeClassId}-${parent.id}-${isChecked}`}
+                    >
+                      <input
+                        defaultChecked={isChecked}
+                        name="parent_ids"
+                        type="checkbox"
+                        value={parent.id}
+                      />
+                      <span>{parent.nama}</span>
+                    </label>
+                  );
+                })}
               </div>
             ) : (
               <p className="rounded-md border border-dashed border-[var(--border)] p-4 text-sm text-[var(--muted)]">
